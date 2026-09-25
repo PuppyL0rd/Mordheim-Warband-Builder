@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mordheim Warband Builder</title>
+<style>
+:root{--bg:#1e2325;--panel:#2a3134;--line:#3d474b;--text:#ddd8cb;--muted:#9aa39f;--brass:#c39a45;--bad:#d0574a;--ok:#7fae7a}
+@media (prefers-color-scheme:light){:root{--bg:#e6e3da;--panel:#f4f2ec;--line:#c9c5b8;--text:#26292a;--muted:#5f6864;--brass:#8a6420;--bad:#a8362b;--ok:#3f7a3b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,sans-serif}
+main{max-width:880px;margin:0 auto;padding:20px 16px 60px}
+h1,h2{font-family:Georgia,'Times New Roman',serif;font-weight:700;margin:0}
+h1{font-size:2rem}h2{font-size:1.2rem;margin:24px 0 8px}
+.bar,.row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+label{display:flex;flex-direction:column;font-size:.85rem;color:var(--muted);gap:3px}
+input,select,button{font:inherit;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:7px 10px}
+button{cursor:pointer}button:hover{border-color:var(--brass)}
+button.primary{background:var(--brass);color:#1a1a1a;border-color:var(--brass);font-weight:600}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+button:disabled{opacity:.4;cursor:not-allowed}button:disabled:hover{border-color:var(--line)}
+details{margin-top:8px}summary{cursor:pointer;color:var(--brass)}
+.totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:18px 0}
+.stat{border-left:3px solid var(--brass);padding:2px 12px}
+.stat b{display:block;font:700 1.7rem Georgia,serif}.stat span{color:var(--muted);font-size:.85rem}
+.bad{color:var(--bad)}.ok{color:var(--ok)}
+.warn{border:1px solid var(--bad);border-radius:4px;padding:8px 12px;margin:0 0 10px;color:var(--bad)}
+.unit{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:10px}
+.unit header{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+.gear{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px}
+.gear label{flex-direction:row;align-items:center;color:var(--text);font-size:.9rem;gap:5px}
+.tag{color:var(--muted);font-size:.85rem}
+.gear label{flex-wrap:wrap}.dsc{flex-basis:100%;margin-left:22px;color:var(--muted);font-size:.8rem}
+.wpn{color:var(--brass);font-size:.78rem;font-family:ui-monospace,monospace}
+.fld{display:flex;flex-direction:column;font-size:.85rem;color:var(--muted);gap:3px}
+.gl{display:flex;flex-wrap:wrap;align-items:center;font-size:.9rem;gap:5px;color:var(--text)}
+.fx{color:var(--brass);font-size:.8rem;margin-left:4px}
+.statwrap{overflow-x:auto}
+.stt{border-collapse:collapse;width:100%;font-size:.85rem;text-align:center;margin:4px 0}
+.stt th,.stt td{border:1px solid var(--line);padding:3px 4px}
+.stt th:first-child,.stt td:first-child{text-align:left;color:var(--muted);white-space:nowrap}
+.stt .max b{color:var(--brass)}.stt .over b{color:var(--bad)}
+.stt .stp input{width:34px;padding:3px 2px}.stt .stp button{padding:3px 7px}
+.stp{display:inline-flex}
+.stp input{width:56px;text-align:center;border-radius:0;margin:0 -1px;-moz-appearance:textfield;appearance:textfield}
+.stp input::-webkit-outer-spin-button,.stp input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.stp button{padding:7px 12px;line-height:1}
+.stp button:first-child{border-radius:4px 0 0 4px}.stp button:last-child{border-radius:0 4px 4px 0}
+.add button{margin:0 6px 6px 0}
+input[type=number]{width:70px}
+#sheet{display:none}
+.tabs{display:flex;gap:6px;margin:14px 0 4px}.tabs button{padding:8px 18px}.tabs button.on{background:var(--brass);color:#1a1a1a;border-color:var(--brass);font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:12px;padding:1px 4px 1px 10px;font-size:.8rem;margin:2px 4px 2px 0}
+.chip button{border:0;background:none;padding:0 6px;cursor:pointer;color:var(--muted)}
+.badge{display:inline-block;border:1px solid var(--line);border-radius:4px;padding:0 8px;font-size:.8rem;margin:0 6px}.badge.bad{border-color:var(--bad);color:var(--bad)}
+.unit.pend{border-color:var(--brass)}.advp{margin-top:8px;padding:8px;border:1px dashed var(--brass);border-radius:4px;align-items:center}
+.stt .up b{color:var(--ok)}.stt .down b{color:var(--bad)}
+.clog{margin:6px 0 0;padding-left:18px}.clog li{margin:2px 0}
+[hidden]{display:none !important}
+.datawarn{border:1px solid var(--bad);border-radius:6px;padding:8px 12px;margin:12px 0;background:rgba(150,40,40,.15)}.datawarn ul{margin:8px 0 0;padding-left:20px;font-size:.9rem}
+.ovl{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.dlg{background:var(--panel);border:1px solid var(--brass);border-radius:6px;padding:16px;max-width:460px;width:100%}
+.dlgset{border:1px solid var(--line);border-radius:4px;margin:10px 0;padding:6px 10px}.dlgset legend{color:var(--muted);font-size:.85rem;padding:0 4px}.chk{flex-direction:row;align-items:center;gap:8px;color:var(--text);font-size:1rem;margin:3px 0}.chk input{width:auto}
+.dlg p{margin:0 0 10px}.dlg .dlgin{width:100%;margin-bottom:10px}.dlg .row{justify-content:flex-end}
+/* ===== Printed roster sheet (Letter). Layout follows the freebooters.org sheets. ===== */
+#sheet{font:8pt/1.15 Arial,Helvetica,sans-serif;color:#000;background:#fff}
+#sheet *{box-sizing:border-box}
+.sh-pg{width:7.9in;break-after:page;page-break-after:always;position:relative}
+.sh-pg:last-child{break-after:auto;page-break-after:auto}
+.sh-foot{font:italic 5.5pt Arial,sans-serif;text-align:right;color:#444;margin-top:2px}
+.lb{display:block;font:700 6pt Arial,sans-serif;padding:1px 3px 0}
+.fit{overflow:hidden;font-size:6.5pt;line-height:1.15;padding:0 3px;word-break:break-word}
+.ctr{display:block;text-align:center;font:700 10pt Arial,sans-serif}
+/* header */
+.hdr{border:2px solid #000;border-radius:0 12px 0 0;margin-bottom:.05in;overflow:hidden}
+.hdr .top{display:grid;grid-template-columns:1fr 2.75in;border-bottom:2px solid #000}
+.hdr .top>div{padding:2px 5px;font-size:11pt;display:flex;align-items:center;gap:6px;height:.3in;min-width:0}
+.hdr .top>div+div{border-left:2px solid #000}.hdr .top span{font-weight:400;font-size:10pt;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-width:0}.hdr .top b{white-space:nowrap}
+.logo{font:700 9pt Georgia,serif;background:#000;color:#fff;padding:1px 6px;border-radius:3px;letter-spacing:.06em;font-style:normal}
+.hdr .low{display:grid;grid-template-columns:1.9in 3fr 2.75in;height:1.22in}
+.hdr .low>div{padding:3px 6px}.hdr .low>div+div{border-left:2px solid #000}
+.fl{display:flex;justify-content:space-between;gap:6px;font-size:9pt;line-height:1.35}
+.fl .v{border-bottom:1px solid #777;min-width:.6in;text-align:right;font-size:8.5pt}
+.wr .rt{border-top:1.5px solid #000;margin-top:2px}
+.se .fit{height:.95in}
+/* hero block */
+.hb{display:grid;grid-template-columns:2.75in 1fr;height:1.36in;border:2px solid #000;margin-bottom:.04in}
+.hb .l{border-right:1.5px solid #000;display:flex;flex-direction:column;min-width:0}
+.nm{font:700 11pt Arial,sans-serif;padding:1px 4px;border-bottom:1px solid #000;white-space:nowrap;overflow:hidden}
+.nm span{font-weight:400;font-size:10pt}
+.ty{font-size:9.5pt;padding:1px 4px;border-bottom:1px solid #000;white-space:nowrap;overflow:hidden}
+.cats{font-size:6pt;padding:1px 3px;white-space:nowrap;border-bottom:1px solid #000}
+.ck{display:inline-block;width:6px;height:6px;border:1.2px solid #000;margin:0 2px 0 3px;vertical-align:-1px}.ck.on{background:#000}
+.st{width:100%;border-collapse:collapse;table-layout:fixed;text-align:center}
+.st th{background:#000;color:#fff;font:700 7.5pt Arial,sans-serif;height:11px;padding:0}
+.st td{border:1px solid #000;padding:0;font-size:8.5pt;font-weight:700}
+.st tr.v td{height:.27in}.st tr.mx td{height:.12in;font-size:6pt;font-weight:400}.st td.blk{background:#000}
+.hb .ft{display:flex;justify-content:space-between;align-items:center;flex:1;padding:0 4px 0 0;font-size:6.5pt}
+.hb .ft i{font-size:6.5pt}.hb .ft b{font-size:7pt}
+.hero{font:700 15pt Arial,sans-serif;color:#fff;background:#999;padding:0 6px;font-style:normal;line-height:1.1}
+.hb .r{display:grid;grid-template-columns:44% 56%;grid-template-rows:1fr .3in .5in;grid-template-areas:"eq sk" "inj sk" "xp xp";min-width:0}
+.hb .eq{grid-area:eq;overflow:hidden;min-height:0;display:flex;flex-direction:column}
+.hb .eq .fit,.hb .sk .fit{flex:1;min-height:0}
+.hb .sk{grid-area:sk;border-left:1px solid #000;overflow:hidden;display:flex;flex-direction:column}
+.hb .inj{grid-area:inj;border-top:1px solid #000;overflow:hidden;display:flex;flex-direction:column}
+.hb .inj .fit{flex:1;min-height:0}
+.hb .xp{grid-area:xp;border-top:1px solid #000;display:grid;grid-template-columns:1fr .75in;align-items:end;padding:1px 3px 2px}
+.xgs{min-width:0}.xl{display:grid;grid-template-columns:repeat(30,1fr);height:7px}
+.xl b{font:400 5pt Arial,sans-serif;text-align:right;line-height:7px}
+.xg{display:grid;grid-template-columns:repeat(30,1fr);gap:0}
+.xg.h,.xr .xl,.xr2 .xl{grid-template-columns:repeat(14,1fr)}
+.bx{display:block;height:.1in;border:.7px solid #000;background:#fff}.bx.on{background:#bbb}.bx.adv{border-width:2px}
+.xt{text-align:center;font-size:6pt;line-height:1.1}.xt b{display:block;font-size:6pt}.xt span{display:block;font:700 11pt Arial,sans-serif;margin-top:1px}
+/* henchmen block */
+.nb{display:grid;grid-template-columns:2.75in 1fr;height:.98in;border:2px solid #000;margin-bottom:.045in}
+.nb .l,.pb .l{border-right:1.5px solid #000;display:flex;flex-direction:column;min-width:0}
+.ty2{display:grid;grid-template-columns:1.5fr 1fr;border-bottom:1px solid #000;font-size:9pt}
+.ty2>span{padding:0 4px;border-right:1px solid #000;white-space:nowrap;overflow:hidden}.ty2>span:last-child{border-right:0}
+.ty2 span span{font-weight:400}
+.nb .st tr.v td{height:.25in}.nb .st tr.mx td{height:.1in}
+.r2{display:grid;grid-template-columns:44% 56%;grid-template-rows:1fr .3in;grid-template-areas:"eq sk" "xr xr";min-width:0}
+.r2 .eq{grid-area:eq;overflow:hidden;display:flex;flex-direction:column;min-height:0}.r2 .sk{grid-area:sk;border-left:1px solid #000;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.r2 .fit{flex:1;min-height:0}
+.xr{grid-area:xr;border-top:1px solid #000;display:grid;grid-template-columns:1fr 1.45in;align-items:end;padding:1px 3px 2px}
+.xr .lb{padding:0;font-size:5.5pt}.gx{font-size:7pt;text-align:right;white-space:nowrap}.gx span{font-weight:700}
+.htx{display:flex;justify-content:flex-end;align-items:center;gap:6px;margin:.04in 0 .05in;font-size:10pt}
+.htx em{width:0;height:0;border:10px solid transparent;border-left:16px solid #000;border-right:0}
+.htx span{display:inline-block;min-width:.9in;height:.25in;border:2px solid #000;text-align:center;font:700 11pt/.25in Arial,sans-serif}
+/* hired sword block (page 3 style) */
+.p3{display:grid;grid-template-columns:.3in 1fr;column-gap:.05in;grid-template-rows:auto auto auto}
+.p3>.sh-foot{grid-column:1 / span 2}
+.sm{font-size:7pt !important}
+.vb{grid-row:1;display:flex;flex-direction:column;border:1.5px solid #000;border-radius:8px;height:7.65in;overflow:hidden}
+.vt{flex:1;writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;font:400 9pt Georgia,serif;padding:6px 0;border-bottom:1px solid #000;overflow:hidden;white-space:nowrap}
+.vt:last-child{border-bottom:0}.vt span{font-weight:700;background:#000;color:#fff;padding:2px 1px;margin-bottom:4px;display:inline-block}
+.pbs{grid-column:2;grid-row:1}
+.pb{display:grid;grid-template-columns:2.5in 1fr 1.9in;height:1.02in;border:1.5px solid #000;border-radius:6px;overflow:hidden;margin-bottom:.045in}
+.pb .nm{display:flex;justify-content:space-between;align-items:center;font:400 9.5pt Georgia,serif;padding:0 0 0 4px}
+.pb .nm>span{font-weight:400}.hs{font:700 7pt Georgia,serif;background:#888;color:#fff;padding:2px 5px;font-style:normal;align-self:stretch;display:flex;align-items:center}
+.pb .ty2{font:400 9pt Georgia,serif}
+.pb .st tr.v td{height:.22in}.pb .st tr.mx td{height:.1in}.pb .st th{font-size:6pt;height:9px}
+.pb .sk{border-right:1px solid #000;overflow:hidden;display:flex;flex-direction:column;min-width:0}.pb .sk .fit{flex:1;min-height:0}
+.eq2{display:flex;flex-direction:column;min-width:0;overflow:hidden}.eq2>.fit{flex:1;min-height:0}
+.xr2{border-top:1px solid #000;display:grid;grid-template-columns:1fr auto;align-items:end;padding:1px 3px 2px;gap:4px}
+.xr2 .gx{font-size:5.5pt}.xr2 .bx{height:.09in}
+.p3>.notes{grid-column:1 / span 2}
+/* notes */
+.notes{border:2px solid #000;min-height:2.15in;margin-top:.03in}
+.nt{font:700 6.5pt Arial,sans-serif;padding:1px 4px;border-bottom:1px solid #000;background:#ddd}
+.cols{columns:2;column-gap:.15in;padding:3px 5px;font-size:6pt;line-height:1.18}.cols p{margin:0 0 2px;break-inside:avoid}
+.eff{display:grid;grid-template-columns:1fr 1fr;column-gap:.15in;border-top:1px solid #000;margin-top:2px;padding:3px 5px;font-size:6pt;line-height:1.18}.eff p{margin:0 0 2px}.eff .nh{font-weight:700;font-size:6.5pt;border-bottom:1px solid #999}.cols .nh{font-weight:700;font-size:6.5pt;border-bottom:1px solid #999;break-after:avoid;margin-top:1px}
+@media print{
+ @page{size:letter;margin:.3in}
+ body{background:#fff;color:#000}
+ main{display:none}
+ #sheet{display:block}
+ .noprint{display:none !important}
+ *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<main>
+<h1>Mordheim Warband Builder</h1>
+<p class="tag">Check costs and limits against your own rulebook. To add or change warbands, items, skills, spells or hired swords, edit the files in the data folder.</p>
+
+<div class="tabs noprint" role="tablist"><button type="button" id="tabBuild" class="on">Build</button><button type="button" id="tabCamp">Campaign</button></div>
+
+<div id="buildView">
+<div class="bar noprint">
+  <div class="fld">Warband type <input id="wbsearch" type="search" placeholder="Search warbands by name, book or tag" aria-label="Search warbands" autocomplete="off"><select id="type" aria-label="Warband type"></select><span class="tag" id="wbhint"></span></div>
+  <label>Warband name <input id="name" placeholder="Name your warband"></label>
+  <div class="fld">Starting gold <span class="stp"><button type="button" data-step="-10" aria-label="Decrease starting gold">−</button><input id="gold" type="number" min="0" step="5" aria-label="Starting gold"><button type="button" data-step="10" aria-label="Increase starting gold">+</button></span></div>
+</div>
+
+<p class="tag" id="source"></p>
+<div class="totals" id="totals"></div>
+<div id="warnings"></div>
+
+<h2>Add a unit</h2>
+<div class="add" id="add"></div>
+
+<h2>Roster</h2>
+<div id="roster"></div>
+
+<h2 class="noprint">Save and share</h2>
+<div class="row noprint">
+  <button id="export">Export JSON</button>
+  <label>Import JSON <input id="import" type="file" accept=".json"></label>
+  <button id="print">Print roster</button>
+  <button id="clear">Clear roster</button>
+</div>
+</div>
+<div id="campView" hidden></div>
+<footer class="tag noprint" style="margin-top:32px;border-top:1px solid var(--line);padding-top:12px">Unofficial fan tool. Warband, item, skill and spell data is summarised from the community rules site <a href="https://mordheimer.net" style="color:var(--brass)">mordheimer.net</a> and the original Mordheim material. Mordheim and its rules are the property of Games Workshop; this project is not affiliated with or endorsed by them. Always check costs and limits against your own rulebook. Rosters are saved only in your own browser: use Export JSON to keep a backup.</footer>
+</main>
+<div id="sheet"></div>
+
+<script src="data/manifest.js"></script>
+<script src="js/loader.js"></script>
+
+</body>
+</html>
