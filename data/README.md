@@ -11,6 +11,7 @@ All game data lives in this folder as plain JavaScript files. You can edit them 
 | `grades.js` | The grade groups shown in the pickers |
 | `hired-swords.js` | Hired swords and Dramatis Personae |
 | `warbands/<id>.js` | One file per warband |
+| `rules.js` | Shared, reusable special rules (Fear, Large Target, Misfire, and so on) referenced by key from equipment, units and hired swords |
 | `manifest.js` | The list of files the tool loads |
 
 When you open the page, the tool checks the data. If it finds a typo or a missing reference (an item name that does not exist, an unknown skill list, and so on) it shows a red box at the top of the page listing the problems.
@@ -76,7 +77,8 @@ If a file has a syntax error, such as a missing comma or bracket, the page shows
 | `needs` | Needs another unit id in the warband first (Sabretusk needs a Guide) |
 | `maxPer` | A limit relative to other units: `{"of":["goblin"],"mult":1}` means at most one per Goblin |
 | `mLabel` | Text to show instead of a number for Movement, for example `"2D6"` |
-| `note` | Special rules text shown on the card and on the printed roster |
+| `note` | Special rules text unique to this unit, shown on the card and on the printed roster. Where it covers more than one named rule, write it the same way as a weapon's `wd` in equipment.js — "Name: text. Name2: text2." — and it's shown the same way: each one on its own line, named in bold, instead of one run-on paragraph |
+| `rules` | Keys from `rules.js` for reusable named rules, e.g. `["fear","large-target"]`; shows as a small tag and prints its full text once in the roster Notes. Prefer this over retyping the same rule in `note` when it already exists in `rules.js`. The same field works on hired swords, and equipment items can carry `"rules":["misfire"]` the same way |
 
 ## Hired swords (`hired-swords.js`)
 

@@ -13,6 +13,8 @@ const HIRED_GRADES = [
   ["1b","Grade 1b hired swords"],
   ["1c","Grade 1c hired swords"],
   ["2a","Grade 2a hired swords"],
+  ["2b","Grade 2b hired swords"],
+  ["3","Grade 3 hired swords (draft)"],
   ["dp-core","Dramatis Personae: core"],
   ["dp-1a","Dramatis Personae: 1a"],
   ["dp-1b","Dramatis Personae: 1b"],

@@ -33,6 +33,9 @@ const SPELLS = {
     {"n":"A Thousand Voices","d":"Difficulty 8. An enemy within 12 inches loses D3+1 Leadership until it passes a Leadership test."},
     {"n":"Shornaal's Temptation","d":"Difficulty 7. An enemy within 8 inches that fails Leadership comes under the Seer's control."}
   ]},
+  "warlock-engineer-magic": {"n":"Warlock Engineer Magic","list":[
+    {"n":"Chain Lightning","d":"Difficulty 7. Not castable in close combat. An 18 inch bolt hit with the caster's own Ballistic Skill (ignoring range, movement and cover) for a Strength 3 hit, no save. On a D6 of 5+ (3+ if both models are in the same water) it jumps to the nearest model within 6 inches of the last target; a natural 1 hits the caster instead."}
+  ]},
   "chaos-rituals": {"n":"Chaos Rituals","list":[
     {"n":"Vision of Torment","d":"Difficulty 10. The closest enemy within 6 inches is stunned, or knocked down if it cannot be stunned."},
     {"n":"Eye of God","d":"Difficulty 7, once per battle. A model within 6 inches rolls: 1 out of action, 2-5 +1 to a characteristic, 6 +1 to all."},

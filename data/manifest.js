@@ -1,7 +1,7 @@
 /* The tool loads these files when the page opens.
    To add a warband: create data/warbands/<id>.js (copy data/warbands/_template.js) and add its id to WARBAND_FILES.
    The order here is the order warbands appear within their grade. */
-const DATA_FILES = ["equipment","skills","spells","races","grades","hired-swords"];
+const DATA_FILES = ["equipment","skills","spells","races","grades","rules","hired-swords"];
 const WARBAND_FILES = [
   "reikland",
   "pitfighters",
