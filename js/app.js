@@ -104,10 +104,14 @@ const kitChosen = u => kitGroups(def(u)).map(g => g.list.find(o=>o.n===(u.kitPic
 const kitText = u => { const d = def(u); return kitGroups(d).length ? [...kitChosen(u).map(o=>o.txt!=null ? o.txt : o.n), d.kitBase].filter(Boolean).join(", ") : (d.kit||""); };
 const kitItemsOf = u => [...(def(u).kitItems||[]), ...kitChosen(u).flatMap(o=>o.kitItems||[])];
 const kitRating = u => kitChosen(u).reduce((t,o)=>t+(o.rt||0),0);
+/* Some hired swords are paid in something other than gold crowns (Wyrdstone shards, Treasures, campaign points).
+   hireAlt / upAlt on that hired sword's entry hold the text to show instead of a gold figure. */
+const hireText = d => d.hireAlt || (d.c+" gc");
+const upkeepText = d => d.upAlt || ((d.up||0)+" gc");
 /* A short weapon/armour profile line for a hired sword's kit, built from real equipment.js items where the kit could be matched to one. */
 const kitProfile = u => { const c = {}; kitItemsOf(u).forEach(n=>c[n]=(c[n]||0)+1);
   return Object.entries(c).map(([n,k])=>{ const e = EQ_ITEMS.find(x=>x.n===n); if(!e) return "";
-    const w = wpnLine(e); if(!w && e.cat!=="armour") return ""; return `<span class="chip">${esc(n)}${k>1?" x"+k:""} ${w}</span>`; }).filter(Boolean).join(" "); };
+    const w = wpnLine(e); if(!w && e.cat!=="armour" && !(e.rules||[]).length) return ""; return `<span class="chip">${esc(n)}${k>1?" x"+k:""} ${w}</span> ${ruleTag(e.rules)}`; }).filter(Boolean).join(" "); };
 const unitRating = u => (def(u).rt || (def(u).large ? 20 : 5)) * u.qty + kitRating(u) + (def(u).noXp ? 0 : (u.xp||0)); /* 5 per model, 20 per large creature, plus experience */
 const count = id => S.units.filter(u=>u.typeId===id).reduce((s,u)=>s+u.qty,0);
 
@@ -125,15 +129,37 @@ function optsBox(u,i,d){
   return `<details data-k="${key}" ${OPEN.has(key)?"open":""}><summary>${g.n} (${(u.opts||[]).length}, ${optCost(u)} gc)</summary><div class="gear">${g.list.map(e=>`<label title="${esc(e.d||"")}"><input type="checkbox" data-i="${i}" data-opt="${esc(e.n)}" ${(u.opts||[]).includes(e.n)?"checked":""}>${esc(e.n)} <span class="tag">${e.c}</span>${descr(e.d)}</label>`).join("")}</div></details>`;
 }
 function extras(u,i,d){
-  const box = (g,kind) => `<details data-k="${i}:${kind}:${g.n}" ${OPEN.has(i+":"+kind+":"+g.n)?"open":""}><summary>${g.n} ${kind} (${u[kind].filter(x=>g.list.map(nm).includes(x)).length})</summary><div class="gear">${g.list.length ? g.list.map(x=>`<label title="${esc(ds(x))}"><input type="checkbox" data-i="${i}" data-pick="${kind}" data-v="${esc(nm(x))}" ${u[kind].includes(nm(x))?"checked":""}>${esc(nm(x))}${fxTag(x)}${descr(ds(x))}</label>`).join("") : `<span class="tag">Nothing listed yet. Add entries in the data block, or use the box below.</span>`}</div></details>`;
+  const box = (g,kind) => `<details data-k="${i}:${kind}:${g.n}" ${OPEN.has(i+":"+kind+":"+g.n)?"open":""}><summary>${g.n} ${kind} (${u[kind].filter(x=>g.list.map(nm).includes(x)).length})</summary><div class="gear skillgrid">${g.list.length ? g.list.map(x=>`<label class="pill" title="${esc(ds(x))}"><input type="checkbox" data-i="${i}" data-pick="${kind}" data-v="${esc(nm(x))}" ${u[kind].includes(nm(x))?"checked":""}>${esc(nm(x))}${fxTag(x)}${descr(ds(x))}</label>`).join("") : `<span class="tag">Nothing listed yet. Add entries in the data block, or use the box below.</span>`}</div></details>`;
   return `<div class="row" style="margin-top:10px">
     ${d.noXp ? "" : `<div class="fld">${d.kind==="henchman"?"Group experience":"Experience"} ${stp(`data-i="${i}" data-f="xp"`,u.xp,0,null,"experience")}</div>`}
     <label style="flex:1;min-width:200px">Other skills, spells or notes <input data-i="${i}" data-f="other" value="${esc(u.other||"")}" placeholder="Anything not in the lists"></label></div>
     ${(d.skills||[]).map(k=>SKILLS[k]).filter(Boolean).map(g=>box(g,"skills")).join("")}${(d.spells||[]).map(k=>SPELLS[k]).filter(Boolean).map(g=>box(g,"spells")).join("")}`;
 }
+/* Splits a weapon's rule text into its named sub-rules ("Two-handed: ...", "Fog of Death: ...") so a weapon with several
+   distinct rules can show each one separately instead of as one run-on paragraph. Falls back to a single unnamed
+   block for text that isn't written that way. */
+function splitRule(text){
+  if(!text) return [];
+  const re = /(^|\.\s+)([A-Z][A-Za-z0-9 '’\-]{1,40}):\s+/g;
+  const marks = []; let m;
+  while((m = re.exec(text))) marks.push({at:m.index+m[1].length, label:m[2], start:m.index+m[0].length});
+  if(!marks.length) return [{n:null, d:text}];
+  const out = [];
+  if(marks[0].at > 0){ const lead = text.slice(0, marks[0].at).trim(); if(lead) out.push({n:null, d:lead}); }
+  marks.forEach((mk,i)=>{ const end = i+1<marks.length ? marks[i+1].at : text.length; out.push({n:mk.label, d:text.slice(mk.start,end).trim()}); });
+  return out;
+}
+/* Renders a weapon's rules as a list, each named sub-rule on its own line with its name picked out. */
+const wpnRulesInline = text => splitRule(text).map(x=>x.n?`<b>${esc(x.n)}:</b> ${esc(x.d)}`:esc(x.d)).join(" ");
+const wpnRules = (text,tag) => { const parts = splitRule(text); if(!parts.length) return "";
+  tag = tag || "div"; return `<${tag==="p"?"div":tag} class="wrules">${parts.map(x=>x.n?`<p><b class="wrn">${esc(x.n)}:</b> ${esc(x.d)}</p>`:`<p>${esc(x.d)}</p>`).join("")}</${tag==="p"?"div":tag}>`; };
 const wpnLine = e => { const parts=[]; if(e.rng!=null) parts.push(e.rng+"\""); if(e.str){ parts.push("S "+(/^[+-]/.test(e.str)?"user"+e.str:e.str)); } else if(e.str===""&&(e.cat==="melee"||EQ_ITEMS.find(x=>x.n===e.n&&x.cat==="melee"))) parts.push("S user");
   if(e.noSave) parts.push("no save"); else if(e.ap) parts.push("save "+e.ap);
   return parts.length ? `<span class="wpn">${parts.join(" · ")}</span>` : ""; };
+/* Renders each shared special-rule key (see data/rules.js) as a small tag with a tooltip; the full text also prints once in the roster Notes / Special Rules panel via ruleTextFor(). */
+const ruleTag = keys => (keys||[]).map(k=>{ const r = SPECIAL_RULES[k]; if(!r) return "";
+  return `<span class="chip rule" title="${esc(r.d)}">${esc(r.n)}</span>`; }).join(" ");
+const ruleTextFor = keys => (keys||[]).map(k=>SPECIAL_RULES[k]).filter(Boolean);
 function gearBox(u,i,d){
   const ok = allowedGear(d);
   return Object.entries(EQUIPMENT).map(([k,g])=>{
@@ -143,7 +169,7 @@ function gearBox(u,i,d){
       const n = u.gear.filter(x=>x===e.n).length, multi = (e.max||1)>1;
       const ctl = multi ? stp(`data-i="${i}" data-gq="${esc(e.n)}"`,n,0,e.max,e.n) : `<input type="checkbox" data-i="${i}" data-g="${esc(e.n)}" ${n?"checked":""}>`;
       const tag = multi ? 'div class="gl"' : "label", end = multi ? "div" : "label";
-      return `<${tag} title="${esc([e.d,e.wd].filter(Boolean).join(" "))}">${ctl}${e.n} <span class="tag">${priceOf(u,e.n)}${multi?" each, up to "+e.max:""}</span>${wpnLine(e)}${fxTag(e)}${descr(e.wd||e.d)}</${end}>`;
+      return `<${tag} title="${esc([e.d,e.wd,...(ruleTextFor(e.rules).map(r=>r.n+": "+r.d))].filter(Boolean).join(" "))}">${ctl}${e.n} <span class="tag">${priceOf(u,e.n)}${multi?" each, up to "+e.max+(e.max===2&&/pistol/i.test(e.n)?" (a brace)":"")+(e.max===2&&e.cat!=="ranged"&&!/pistol/i.test(e.n)?" (dual-wield)":""):""}</span>${wpnLine(e)} ${ruleTag(e.rules)}${fxTag(e)}${e.wd ? wpnRules(e.wd) : descr(e.d)}</${end}>`;
     }).join("")}</div></details>`;
   }).join("");
 }
@@ -166,6 +192,29 @@ function fillTypes(){
   $("type").innerHTML = WB_GRADES.map(([g,label])=>{ const items = all.filter(([k,v])=>v.grade===g && (k===S.type || wbMatches(k,v)));
     return items.length ? `<optgroup label="${label}">${items.map(([k,v])=>`<option value="${k}" ${k===S.type?"selected":""}>${v.name}</option>`).join("")}</optgroup>` : ""; }).join("");
   $("wbhint").textContent = WBQ.trim() ? (found.length ? found.length+" match"+(found.length>1?"es":"")+". Press Enter to open the first." : "No warband matches.") : all.length+" warbands available";
+}
+let HQ = "";
+const hiredMatches = (d,q) => { q = (q!=null?q:HQ).trim().toLowerCase(); if(!q) return true;
+  const hay = (d.n+" "+(d.src||"")+" "+(raceName(d)||"")+" "+(HIRED_GRADES.find(g=>g[0]===d.g)||[]).join(" ")+" "+(d.sk||"")).toLowerCase();
+  return q.split(/\s+/).every(w=>hay.includes(w)); };
+const hiredOptionsHTML = list => HIRED_GRADES.map(([g,label])=>{ const items = list.filter(d=>d.g===g); if(!items.length) return "";
+  return `<optgroup label="${esc(label)}">${items.map(d=>`<option value="${d.id}">${esc(d.n)}${raceName(d)?" ("+esc(raceName(d))+")":""} - ${esc(hireText(d))}</option>`).join("")}</optgroup>`; }).join("");
+function fillHired(){
+  const okList = HIRED.filter(d=>canAdd(d) && (d.g in Object.fromEntries(HIRED_GRADES)) && hiredMatches(d,HQ));
+  $("hiredselect").innerHTML = hiredOptionsHTML(okList);
+  const canHireAny = HIRED.filter(d=>canHire(d)||count(d.id)>0);
+  $("hiredcount").textContent = HQ.trim() ? (okList.length ? okList.length+" match"+(okList.length>1?"es":"") : "No hired sword matches.") : okList.length+" of "+canHireAny.length+" available to hire now";
+  $("hiredadd").disabled = !okList.length;
+}
+/* Campaign tab's own hired-sword picker: only swords not already hired, filtered by CHQ. Recomputing just the select and count (not the whole panel) keeps focus in the search box while typing. */
+let CHQ = "";
+function campHiredEligible(){ return HIRED.filter(d=>canHire(d)&&count(d.id)===0); }
+function campFillHired(){
+  const el = $("chiredselect"); if(!el) return;
+  const base = campHiredEligible(), okList = base.filter(d=>hiredMatches(d,CHQ));
+  el.innerHTML = hiredOptionsHTML(okList);
+  $("chiredcount").textContent = CHQ.trim() ? (okList.length ? okList.length+" match"+(okList.length>1?"es":"") : "No hired sword matches.") : okList.length+" available to hire now";
+  $("chiredadd").disabled = !okList.length;
 }
 async function switchWarband(k){
   if(!WARBANDS[k] || k===S.type) return;
@@ -220,11 +269,9 @@ function render(){
     STAT_KEYS.forEach(k=>{ const r = c.rows[k]; if(r.cap!=null && r.total>r.cap) warns.push(`${u.label||def(u).n}: ${k} is ${r.total}, above the maximum of ${r.cap}.`); }); });
   $("warnings").innerHTML = warns.map(t=>`<p class="warn">${t}</p>`).join("");
 
-  const btn = d => `<button data-add="${d.id}" ${canAdd(d)?"":`disabled title="${d.kind==="hired"&&!canHire(d)?"This warband cannot hire this sword":"Limit reached"}"`}>Add ${d.n} (${raceName(d)?raceName(d)+", ":""}${d.c} gc) ${d.kind==="hired"||unitCap(d)!==Infinity ? count(d.id)+"/"+(d.kind==="hired"?1:unitCap(d)) : "x"+count(d.id)}</button>`;
-  $("add").innerHTML = w.units.map(btn).join("") + (()=>{ const okList = HIRED.filter(d=>canHire(d)||count(d.id)>0);
-    return `<p class="tag">Hired swords and special characters this warband can hire (${okList.length} of ${HIRED.length})</p>` + HIRED_GRADES.map(([g,label])=>{
-      const items = okList.filter(d=>d.g===g); if(!items.length) return ""; const key = "add:"+g;
-      return `<details data-k="${key}" ${OPEN.has(key)?"open":""}><summary>${label} (${items.length})</summary>${items.map(btn).join("")}</details>`; }).join(""); })();
+  const btn = d => `<button data-add="${d.id}" ${canAdd(d)?"":`disabled title="${d.kind==="hired"&&!canHire(d)?"This warband cannot hire this sword":"Limit reached"}"`}>Add ${d.n} (${raceName(d)?raceName(d)+", ":""}${d.kind==="hired"?hireText(d):d.c+" gc"}) ${d.kind==="hired"||unitCap(d)!==Infinity ? count(d.id)+"/"+(d.kind==="hired"?1:unitCap(d)) : "x"+count(d.id)}</button>`;
+  $("add").innerHTML = w.units.map(btn).join("");
+  fillHired();
 
   $("roster").innerHTML = S.units.length ? S.units.map((u,i)=>{
     const d = def(u);
@@ -237,8 +284,8 @@ function render(){
         <div><b>${unitCost(u)} gc</b> <span class="tag">${d.kind==="hired"?"hired sword"+(raceName(d)?", "+raceName(d):""):d.kind}${u.qty>1?`, ${u.qty} models`:""}, rating ${unitRating(u)}</span>
           <button class="noprint" data-del="${i}" aria-label="Remove ${d.n}">Remove</button></div>
       </header>
-      ${d.kind==="hired" ? `${kitGroups(d).length?`<div class="row">${kitSelects(u,i)}</div>`:""}<p class="tag">Kit: ${esc(kitText(u))}</p>${kitProfile(u)?`<p>${kitProfile(u)}</p>`:""}<p class="tag">Hire ${d.c} gc, upkeep ${d.up||0} gc. ${d.noXp?"Gains no experience. ":""}Source: ${esc(d.src)}</p>` : gearBox(u,i,d)+setsBox(u,i,d)+optsBox(u,i,d)}
-      ${d.note?`<p class="tag">${esc(d.note)}</p>`:""}
+      ${d.kind==="hired" ? `${kitGroups(d).length?`<div class="row">${kitSelects(u,i)}</div>`:""}<p class="tag">Kit: ${esc(kitText(u))}</p>${kitProfile(u)?`<p>${kitProfile(u)}</p>`:""}<p class="tag">Hire ${hireText(d)}, upkeep ${upkeepText(d)}. ${d.noXp?"Gains no experience. ":""}Source: ${esc(d.src)}</p>` : gearBox(u,i,d)+setsBox(u,i,d)+optsBox(u,i,d)}
+      ${d.note?wpnRules(d.note):""}${ruleTag(d.rules)?`<p>${ruleTag(d.rules)}</p>`:""}
       ${statsBox(u,i,d)}
       ${extras(u,i,d)}
     </section>`;
@@ -286,23 +333,25 @@ function sheetHTML(){
       <div class="r2"><div class="eq"><b class="lb">Equipment:</b>${fit(u?gearList(u):"")}</div><div class="sk"><b class="lb">Special Rules &amp; Skills:</b>${fit(u?ruleList(u):"")}</div>${groupXp(u)}</div></div>`; };
   const hireBlk = u => { const d = u && def(u), xp = u ? (u.xp||0) : 0;
     return `<div class="pb"><div class="l"><div class="nm"><span>Name: <span>${u?esc(u.label):""}</span></span><em class="hs">Hired Sword</em></div><div class="ty2"><span>Type: ${nmSp(u&&d.n)}</span><span>Number: <span>${u?u.qty:""}</span></span></div>${stTable(u)}</div>
-      <div class="sk"><b class="lb">Skills &amp; Special Rules:</b>${fit(u?[d.note||"",ruleList(u),injText(u)].filter(Boolean).join(" "):"")}</div>
+      <div class="sk"><b class="lb">Skills &amp; Special Rules:</b>${fit(u?[[d.note?wpnRulesInline(d.note):"",...(d.rules||[]).map(k=>SPECIAL_RULES[k]&&SPECIAL_RULES[k].n)].filter(Boolean).join(". "),ruleList(u),injText(u)].filter(Boolean).join(" "):"")}</div>
       <div class="eq2"><b class="lb">Equipment:</b>${fit(u?(gearList(u)||kitText(u)):"")}<div class="xr2"><div class="xgs"><div class="xl">${lbls(14,5)}</div><div class="xg h">${boxes(1,14,xp,HENCH_XP)}</div></div><div class="gx"><b>Group Experience</b> <span>${u&&!d.noXp?xp:""}</span></div></div></div></div>`; };
   /* Notes: special rules and options first, then the effects of the weapons carried and of the skills and spells known, at the bottom */
   const wpnText = e => { const p = []; if(e.rng!=null) p.push(e.rng+"\" range"); if(e.str) p.push("Strength "+(/^[+-]/.test(e.str)?"user "+e.str:e.str)); else if(e.cat==="melee") p.push("Strength as user");
     if(e.noSave) p.push("no armour save"); else if(e.ap) p.push("save "+(e.ap>0?"+":"")+e.ap); return p.join(", "); };
-  const notesFor = units => { const seen = new Set(), general = [], weapons = [], skills = [];
+  const notesFor = units => { const seen = new Set(), general = [], weapons = [], skills = [], rules = [];
     units.forEach(u=>{ const d = def(u);
-      if(d.note && !seen.has("n"+d.id)){ seen.add("n"+d.id); general.push(`<b>${esc(d.n)}:</b> ${esc(d.note)}`); }
+      if(d.note && !seen.has("n"+d.id)){ seen.add("n"+d.id); general.push(`<b>${esc(d.n)}:</b> ${wpnRulesInline(d.note)}`); }
+      (d.rules||[]).forEach(k=>{ const r = SPECIAL_RULES[k]; if(r && !seen.has("r"+k)){ seen.add("r"+k); rules.push(`<b>${esc(r.n)}:</b> ${esc(r.d)}`); } });
       const og = optGroup(u); (u.opts||[]).forEach(k=>{ const o = og && og.list.find(x=>x.n===k); if(o && o.d && !seen.has("o"+k)){ seen.add("o"+k); general.push(`<b>${esc(k)}:</b> ${esc(o.d)}`); } });
       (u.inj||[]).forEach(x=>{ if(x.note && !seen.has("i"+x.n)){ seen.add("i"+x.n); general.push(`<b>${esc(x.n)}:</b> ${esc(x.note)}`); } });
       [...u.gear, ...(isHired(u) ? kitItemsOf(u) : [])].forEach(n=>{ const e = EQ_ITEMS.find(x=>x.n===n);
-        if(e && (e.cat==="melee"||e.cat==="ranged"||e.wd) && !seen.has("w"+n) && (wpnText(e)||e.wd)){ seen.add("w"+n); weapons.push(`<b>${esc(n)}</b>${wpnText(e)?" ("+esc(wpnText(e))+")":""}${e.wd?": "+esc(e.wd):""}`); } });
+        if(e && (e.cat==="melee"||e.cat==="ranged"||e.wd) && !seen.has("w"+n) && (wpnText(e)||e.wd)){ seen.add("w"+n); weapons.push(`<b>${esc(n)}</b>${wpnText(e)?" ("+esc(wpnText(e))+")":""}${e.wd?": "+wpnRulesInline(e.wd):""}`); }
+        (e && e.rules || []).forEach(k=>{ const r = SPECIAL_RULES[k]; if(r && !seen.has("r"+k)){ seen.add("r"+k); rules.push(`<b>${esc(r.n)}:</b> ${esc(r.d)}`); } }); });
       [...u.skills,...(u.spells||[])].forEach(k=>{ const g = SKILL_ITEMS.find(x=>x.n===k) || SPELL_ITEMS.find(x=>x.n===k);
         const fxt = g && g.fx ? Object.entries(g.fx).map(([st,v])=>(v>0?"+":"")+v+" "+st).join(", ") : "";
         if(g && (g.d||fxt) && !seen.has("s"+k)){ seen.add("s"+k); skills.push(`<b>${esc(k)}:</b> ${esc(g.d||"")}${g.d&&fxt?" ":""}${fxt?"("+esc(fxt)+")":""}`); } }); });
     const blk = (title,list) => list.length ? `${title?`<p class="nh">${title}</p>`:""}${list.map(x=>`<p>${x}</p>`).join("")}` : "";
-    const top = general.length ? `<div class="cols">${blk("",general)}</div>` : "";
+    const top = (rules.length||general.length) ? `<div class="cols">${blk("Special rules",rules)}${blk(rules.length?"Notes":"",general)}</div>` : "";
     const bottom = weapons.length||skills.length ? `<div class="eff"><div>${blk("Weapon effects",weapons)}</div><div>${blk("Skill and spell effects",skills)}</div></div>` : "";
     return top+bottom; };
   const notesBox = html => `<div class="notes"><div class="nt">Notes (Skill Descriptions, Spell Descriptions, etc.):</div>${html||""}</div>`;
@@ -331,9 +380,12 @@ window.addEventListener("beforeprint", fitSheet);
 
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
+function addUnitById(id){ const d = wb().units.concat(HIRED).find(x=>x.id===id); if(!d || !canAdd(d)) return false;
+  const src = wb().units.find(x=>x.id===id);
+  S.units.push(norm({typeId:id,label:"",qty:1,gear:[],xp:(src||{}).startXp||0,skills:[...((src||{}).startSkills||[])]})); render(); return true; }
 document.addEventListener("click", e=>{
   const t = e.target;
-  if(t.dataset.add && canAdd(wb().units.concat(HIRED).find(d=>d.id===t.dataset.add))){ S.units.push(norm({typeId:t.dataset.add,label:"",qty:1,gear:[],xp:(wb().units.find(x=>x.id===t.dataset.add)||{}).startXp||0,skills:[...((wb().units.find(x=>x.id===t.dataset.add)||{}).startSkills||[])]})); render(); }
+  if(t.dataset.add){ addUnitById(t.dataset.add); }
   if(t.dataset.del){ S.units.splice(+t.dataset.del,1); OPEN.clear(); render(); }
   if(t.dataset.step){ const inp = t.parentElement.querySelector("input");
     const min = inp.min!=="" ? +inp.min : -Infinity, max = inp.max!=="" ? +inp.max : Infinity;
@@ -368,7 +420,22 @@ document.addEventListener("change", e=>{
   render();
 });
 
-document.addEventListener("input", e=>{ if(e.target.id==="wbsearch"){ WBQ = e.target.value; fillTypes(); } });
+document.addEventListener("input", e=>{
+  if(e.target.id==="wbsearch"){ WBQ = e.target.value; fillTypes(); }
+  else if(e.target.id==="hiredsearch"){ HQ = e.target.value; fillHired(); }
+  else if(e.target.id==="chiredsearch"){ CHQ = e.target.value; campFillHired(); }
+});
+document.addEventListener("keydown", async e=>{ if(e.target.id==="chiredsearch" && e.key==="Enter"){
+  const sel = $("chiredselect"), first = sel && sel.querySelector("option");
+  if(first){ e.preventDefault(); const before = S.units.length;
+    await campAct("recruit",0,first.value);
+    if(S.units.length>before){ CHQ = ""; e.target.value = ""; campFillHired(); } } } });
+document.getElementById("hiredadd").addEventListener("click", ()=>{
+  const sel = $("hiredselect"); if(!sel.value) return;
+  if(addUnitById(sel.value)){ $("hiredsearch").value = ""; HQ = ""; fillHired(); }
+});
+document.getElementById("hiredsearch").addEventListener("keydown", e=>{ if(e.key==="Enter"){
+  const first = $("hiredselect").querySelector("option"); if(first && addUnitById(first.value)){ e.preventDefault(); e.target.value = ""; HQ = ""; fillHired(); } } });
 document.addEventListener("keydown", e=>{ if(e.target.id==="wbsearch" && e.key==="Enter"){
   const first = Object.entries(WARBANDS).find(([k,v])=>wbMatches(k,v)); if(first){ e.preventDefault(); e.target.value = ""; switchWarband(first[0]); if(first[0]===S.type){ WBQ = ""; fillTypes(); } } } });
 document.addEventListener("toggle", e=>{ const k = e.target.dataset && e.target.dataset.k;
@@ -459,6 +526,18 @@ function equipPanel(u,i){
       ${u.qty>1?`<p class="tag">Every model in the group carries it, so the cost is per model times ${u.qty}.</p>`:""}` : ""}
   </details>`;
 }
+/* Everything currently in effect for one warrior: his own special rules, the rules and effects of what he's carrying, and what his skills and spells do. Used by the Campaign tab's "Special rules in effect" panel. */
+function unitEffects(u){
+  const d = def(u), seen = new Set(), traits = [], weapons = [], skills = [];
+  (d.rules||[]).forEach(k=>{ const r = SPECIAL_RULES[k]; if(r && !seen.has("r"+k)){ seen.add("r"+k); traits.push(`<p><b>${esc(r.n)}:</b> ${esc(r.d)}</p>`); } });
+  [...(u.gear||[]), ...(isHired(u) ? kitItemsOf(u) : [])].forEach(n=>{ const e = EQ_ITEMS.find(x=>x.n===n); if(!e) return;
+    (e.rules||[]).forEach(k=>{ const r = SPECIAL_RULES[k]; if(r && !seen.has("r"+k)){ seen.add("r"+k); traits.push(`<p><b>${esc(r.n)}:</b> ${esc(r.d)}</p>`); } });
+    if(e.wd && !seen.has("w"+n)){ seen.add("w"+n); weapons.push(`<div class="wblk"><p class="wpnname">${esc(n)}</p>${wpnRules(e.wd)}</div>`); } });
+  [...u.skills,...(u.spells||[])].forEach(k=>{ const g = SKILL_ITEMS.find(x=>x.n===k) || SPELL_ITEMS.find(x=>x.n===k);
+    const fxt = g && g.fx ? Object.entries(g.fx).map(([st,v])=>(v>0?"+":"")+v+" "+st).join(", ") : "";
+    if(g && (g.d||fxt) && !seen.has("s"+k)){ seen.add("s"+k); skills.push(`<p><b>${esc(k)}:</b> ${esc(g.d||"")}${g.d&&fxt?" ":""}${fxt?"("+esc(fxt)+")":""}</p>`); } });
+  return {traits, weapons, skills, count: traits.length+weapons.length+skills.length};
+}
 function campCard(u,i){
   const d = def(u), c = statCalc(u), pend = advPending(u), nxt = nextAdvAt(u), hen = d.kind==="henchman", hired = d.kind==="hired";
   const tbl = c ? `<div class="statwrap"><table class="stt"><tr>${STAT_KEYS.map(k=>`<th>${k}</th>`).join("")}<th>Sv</th></tr><tr>${STAT_KEYS.map(k=>{ const r = c.rows[k];
@@ -472,8 +551,13 @@ function campCard(u,i){
       ${u.miss>0?`<span class="badge bad">Misses ${u.miss} game${u.miss>1?"s":""}</span><button type="button" data-act="missdec" data-i="${i}" class="noprint">Back in</button>`:""}</div>
       <div class="tag">rating ${unitRating(u)}</div></header>
     ${tbl}
-    ${hired ? `${kitGroups(d).length?`<div class="row noprint">${kitSelects(u,i)}</div>`:""}<p class="tag">Kit: ${esc(kitText(u))}</p>${kitProfile(u)?`<p>${kitProfile(u)}</p>`:""}<p class="tag">Upkeep ${d.up||0} gc.</p>` : `<p class="tag"><b>Equipment:</b> ${esc(gearList(u)||"none")}</p>`}
+    ${hired ? `${kitGroups(d).length?`<div class="row noprint">${kitSelects(u,i)}</div>`:""}<p class="tag">Kit: ${esc(kitText(u))}</p>${kitProfile(u)?`<p>${kitProfile(u)}</p>`:""}<p class="tag">Upkeep ${upkeepText(d)}.</p>` : `<p class="tag"><b>Equipment:</b> ${esc(gearList(u)||"none")}</p>`}
+    ${d.note ? wpnRules(d.note) : ""}${ruleTag(d.rules)?`<p>${ruleTag(d.rules)}</p>`:""}
     ${u.skills.length||(u.spells||[]).length ? `<p class="tag"><b>Skills and spells:</b> ${esc([...u.skills,...(u.spells||[])].join(", "))}</p>` : ""}
+    ${(()=>{ const eff = unitEffects(u), k = "camp:"+i+":eff"; if(!eff.count) return "";
+      const grp = (label,list) => list.length ? `${label?`<p class="efflabel">${label}</p>`:""}${list.join("")}` : "";
+      return `<details data-k="${k}" ${OPEN.has(k)?"open":""}><summary>Special rules in effect (${eff.count})</summary>
+        ${grp("",eff.traits)}${grp(eff.traits.length?"Weapons":"",eff.weapons)}${eff.skills.length?`<div class="skillfx">${grp("Skills &amp; Spells",eff.skills)}</div>`:""}</details>`; })()}
     ${u.other ? `<p class="tag"><b>Notes:</b> ${esc(u.other)}</p>` : ""}
     ${chips ? `<p>${chips}</p>` : ""}
     ${canLevel(d) ? `<div class="row" style="margin-top:8px"><div class="fld">${hen?"Group experience":"Experience"} ${stp(`data-i="${i}" data-f="xp"`,u.xp||0,0,null,"experience")}</div>
@@ -498,7 +582,7 @@ function renderCamp(){
   const sec = (title,idx) => idx.length ? `<h2>${title}</h2>${idx.map(i=>campCard(S.units[i],i)).join("")}` : "";
   const btn = d => { const n = count(d.id), cap = d.kind==="hired" ? 1 : unitCap(d); const hen = d.kind==="henchman" && n>0;
     return `<button type="button" data-act="recruit" data-id="${d.id}" ${canAdd(d)?"":"disabled"} title="${d.kind==="hired"&&!canHire(d)?"This warband cannot hire this sword":"Limit reached"}">${hen?"Add one":"Recruit"} ${esc(d.n)} (${d.c} gc) ${cap!==Infinity?n+"/"+cap:"x"+n}</button>`; };
-  const okHired = HIRED.filter(d=>canHire(d)&&count(d.id)===0);
+  const okHired = campHiredEligible().filter(d=>hiredMatches(d,CHQ));
   const log = (S.log||[]).slice(0,30);
   el.innerHTML = `
     <div class="row noprint" style="justify-content:space-between"><div><h2 style="margin:8px 0 0">${esc(S.name||"Unnamed warband")}</h2><span class="tag">${esc(w.name)}</span></div>
@@ -519,7 +603,12 @@ function renderCamp(){
     <h2>Recruitment</h2>
     <p class="tag">A new hero or group joins with no equipment. A henchman added to an existing group takes that group's equipment, and its cost. Buy more gear on the Build tab; it comes out of the same treasury.</p>
     <div class="add">${w.units.map(btn).join("")}</div>
-    <details data-k="camp:hired" ${OPEN.has("camp:hired")?"open":""}><summary>Hired swords available (${okHired.length})</summary><div class="add">${okHired.map(btn).join("")}</div></details>
+    <h3>Hired swords and Dramatis Personae</h3>
+    <div class="fld hiredpick">
+      <input id="chiredsearch" type="search" placeholder="Search hired swords by name, book, race or grade" value="${esc(CHQ)}" aria-label="Search hired swords" autocomplete="off">
+      <select id="chiredselect" aria-label="Hired sword to recruit" size="8">${hiredOptionsHTML(okHired)}</select>
+      <div class="row noprint" style="margin-top:6px"><button type="button" id="chiredadd" data-act="chiredadd">Add hired sword</button><span class="tag" id="chiredcount">${CHQ.trim()?(okHired.length?okHired.length+" match"+(okHired.length>1?"es":""):"No hired sword matches."):okHired.length+" available to hire now"}</span></div>
+    </div>
     <details data-k="camp:log" ${OPEN.has("camp:log")?"open":""}><summary>History (${(S.log||[]).length})</summary>${log.length?`<ul class="clog">${log.map(x=>`<li><span class="tag">Game ${x.g}</span> ${esc(x.t)}</li>`).join("")}</ul>`:`<p class="tag">Nothing recorded yet.</p>`}</details>`;
 }
 
@@ -648,7 +737,7 @@ function syncView(){ const c = S.mode==="camp"; $("buildView").hidden = c; $("ca
 function setMode(m){ S.mode = m==="camp" ? "camp" : "build"; render(); }
 $("tabBuild").onclick = ()=>setMode("build");
 $("tabCamp").onclick = ()=>setMode("camp");
-$("campView").addEventListener("click", e=>{ const b = e.target.closest("[data-act]"); if(!b) return; const act = b.dataset.act, i = +b.dataset.i;
+$("campView").addEventListener("click", async e=>{ const b = e.target.closest("[data-act]"); if(!b) return; const act = b.dataset.act, i = +b.dataset.i;
   if(act==="print"){ fitSheet(); window.print(); return; }
   if(act==="export"){ $("export").click(); return; }
   if(act==="gold"){ campGold(+b.dataset.s); return; }
@@ -657,6 +746,9 @@ $("campView").addEventListener("click", e=>{ const b = e.target.closest("[data-a
   if(act==="inj"){ campAct("inj",i,b.dataset.v); return; }
   if(act==="injdel"){ campAct("injdel",i,b.dataset.k); return; }
   if(act==="recruit"){ campAct("recruit",0,b.dataset.id); return; }
+  if(act==="chiredadd"){ const sel = $("chiredselect"); if(!sel || !sel.value) return; const before = S.units.length;
+    await campAct("recruit",0,sel.value);
+    if(S.units.length>before){ CHQ = ""; if($("chiredsearch")) $("chiredsearch").value = ""; campFillHired(); } return; }
   if(act==="buy"){ campAct("buy",i,($("buy-"+i)||{}).value); return; }
   if(act==="sell"){ campAct("sell",i,b.dataset.n); return; }
   campAct(act,i); });
@@ -668,6 +760,7 @@ $("campView").addEventListener("change", e=>{ const t = e.target;
 function dataProblems(){
   const bad = [], gradeIds = WB_GRADES.map(g=>g[0]), hGrades = HIRED_GRADES.map(g=>g[0]);
   const itemNames = new Set(EQ_ITEMS.map(e=>e.n)), cats = new Set(Object.keys(EQUIPMENT));
+  EQ_ITEMS.forEach(e=>(e.rules||[]).forEach(k=>{ if(!SPECIAL_RULES[k]) bad.push('Item "'+e.n+'": unknown special rule "'+k+'".'); }));
   const okGear = n => itemNames.has(n) || cats.has(n);
   const statKeys = ["M","WS","BS","S","T","W","I","A","Ld"];
   for(const [id,w] of Object.entries(WARBANDS)){
@@ -684,6 +777,7 @@ function dataProblems(){
       if(typeof u.c!=="number") bad.push(ut+": cost (c) must be a number.");
       if(u.stats && statKeys.some(k=>typeof u.stats[k]!=="number")) bad.push(ut+": stats must have all of "+statKeys.join(", ")+".");
       (u.gear||[]).forEach(n=>{ if(!okGear(n)) bad.push(ut+': unknown item "'+n+'" in gear.'); });
+      (u.rules||[]).forEach(k=>{ if(!SPECIAL_RULES[k]) bad.push(ut+': unknown special rule "'+k+'".'); });
       (u.skills||[]).forEach(k=>{ if(!SKILLS[k]) bad.push(ut+': unknown skill list "'+k+'".'); });
       (u.spells||[]).forEach(k=>{ if(!SPELLS[k]) bad.push(ut+': unknown spell list "'+k+'".'); });
       if(u.opts && !(w.opts && w.opts[u.opts])) bad.push(ut+': opts group "'+u.opts+'" is not defined in the warband opts.');
@@ -699,6 +793,7 @@ function dataProblems(){
     (h.skills||[]).forEach(k=>{ if(!SKILLS[k]) bad.push(at+': unknown skill list "'+k+'".'); });
     (h.spells||[]).forEach(k=>{ if(!SPELLS[k]) bad.push(at+': unknown spell list "'+k+'".'); });
     (h.kitItems||[]).forEach(x=>{ if(!itemNames.has(x)) bad.push(at+': kitItems names unknown item "'+x+'".'); });
+    (h.rules||[]).forEach(k=>{ if(!SPECIAL_RULES[k]) bad.push(at+': unknown special rule "'+k+'".'); });
     (h.kitOptions||[]).forEach(g=>{ if(!g.n || !Array.isArray(g.list) || !g.list.length) bad.push(at+": each kitOptions group needs a name (n) and a list of options.");
       (g.list||[]).forEach(o=>{ if(!o.n) bad.push(at+": a kit option is missing its name (n)."); (o.kitItems||[]).forEach(x=>{ if(!itemNames.has(x)) bad.push(at+': kit option "'+o.n+'" names unknown item "'+x+'".'); }); }); }); });
   return bad;
