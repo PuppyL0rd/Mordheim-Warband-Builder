@@ -31,7 +31,22 @@ details{margin-top:8px}summary{cursor:pointer;color:var(--brass)}
 .gear label{flex-direction:row;align-items:center;color:var(--text);font-size:.9rem;gap:5px}
 .tag{color:var(--muted);font-size:.85rem}
 .gear label{flex-wrap:wrap}.dsc{flex-basis:100%;margin-left:22px;color:var(--muted);font-size:.8rem}
+.hiredpick select{width:100%;font:inherit}
+.hiredpick input{width:100%;margin-bottom:6px}
 .wpn{color:var(--brass);font-size:.78rem;font-family:ui-monospace,monospace}
+.chip.rule{border-color:var(--brass);color:var(--brass);font-size:.78rem}
+.efflabel{font:700 .72rem/1 sans-serif;text-transform:uppercase;letter-spacing:.04em;color:var(--brass);margin:10px 0 2px}
+details summary~.efflabel:first-of-type{margin-top:6px}
+.skillfx{margin-top:6px;padding:8px 10px;border-left:3px solid var(--brass);background:rgba(180,140,60,.08);border-radius:0 4px 4px 0}
+.skillfx .efflabel{margin-top:0}
+.skillfx p{margin:4px 0}
+.wrules{margin-top:2px}
+.wrules p{margin:2px 0 2px 10px;position:relative}
+.wrules p:before{content:"";position:absolute;left:-10px;top:.55em;width:5px;height:5px;border-radius:50%;background:var(--line)}
+.wrn{color:var(--brass)}
+.wblk{margin:8px 0}
+.wblk .wpnname{font-weight:700;margin:0 0 2px}
+.wblk .wrules p:before{background:var(--brass);opacity:.5}
 .fld{display:flex;flex-direction:column;font-size:.85rem;color:var(--muted);gap:3px}
 .gl{display:flex;flex-wrap:wrap;align-items:center;font-size:.9rem;gap:5px;color:var(--text)}
 .fx{color:var(--brass);font-size:.8rem;margin-left:4px}
@@ -179,6 +194,13 @@ input[type=number]{width:70px}
 
 <h2>Add a unit</h2>
 <div class="add" id="add"></div>
+
+<h3>Hired swords and Dramatis Personae</h3>
+<div class="fld hiredpick">
+  <input id="hiredsearch" type="search" placeholder="Search hired swords by name, book, race or grade" aria-label="Search hired swords" autocomplete="off">
+  <select id="hiredselect" aria-label="Hired sword to add" size="8"></select>
+  <div class="row noprint" style="margin-top:6px"><button type="button" id="hiredadd" class="primary">Add hired sword</button><span class="tag" id="hiredcount"></span></div>
+</div>
 
 <h2>Roster</h2>
 <div id="roster"></div>
