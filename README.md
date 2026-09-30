@@ -10,7 +10,7 @@ A free tool for building and running Mordheim warbands. It runs entirely in your
 - 72 warbands across the core rules and grades 1a, 1b, 1c and 2a, with a search box for finding one by name, book, tag or unit.
 - Starting gold, model and hero limits, mandatory units and unit ratios (for example Goblins per Orc), with warnings when you break them.
 - Equipment, skills, spells, mutations and blessings for each warrior, with stat and armour save effects worked out for you.
-- Hired swords and Dramatis Personae, filtered by what each warband may hire, with their kit linked to real equipment items (so its weapons and armour show their profile and count toward the armour save) and a dropdown for any kit with a choice.
+- Hired swords and Dramatis Personae in a searchable dropdown (type to filter by name, book, race or grade), filtered by what each warband may hire, with their kit linked to real equipment items (so its weapons and armour show their profile and count toward the armour save) and a dropdown for any kit with a choice.
 - Weapon profiles (Strength, range, armour save penalty) shown next to equipment, sourced from mordheimer.net's weapon pages.
 - Stat maximums by race, warband rating and upkeep.
 - A printable roster on US Letter that follows the freebooters.org sheet layout: page 1 heroes with the warband header, then henchmen, then hired swords. It starts a new page whenever a section has more than 6 heroes or 7 henchman or hired sword blocks. Experience boxes are shaded, injuries and missed games print in the Injuries box, and special rules, injuries and option descriptions print in the Notes area, with the effects of the weapons carried and the skills and spells known listed at the bottom.
@@ -20,7 +20,7 @@ A free tool for building and running Mordheim warbands. It runs entirely in your
 - Apply advances: +1 to a characteristic, a new skill or spell, or a note.
 - Serious injuries with lasting stat effects, missed games, and removing the dead.
 - Buy equipment for a hero or henchman group from the warband's own list (with the same limits as the Build tab), and sell, drop or undo a purchase.
-- Recruitment, the treasury, hired sword upkeep, and a history log.
+- Recruitment, including a searchable hired-sword dropdown like the Build tab's, the treasury, hired sword upkeep, and a history log.
 - Promote a henchman with The Lad's Got Talent.
 
 ## Project layout

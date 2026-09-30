@@ -31,6 +31,16 @@ details{margin-top:8px}summary{cursor:pointer;color:var(--brass)}
 .gear label{flex-direction:row;align-items:center;color:var(--text);font-size:.9rem;gap:5px}
 .tag{color:var(--muted);font-size:.85rem}
 .gear label{flex-wrap:wrap}.dsc{flex-basis:100%;margin-left:22px;color:var(--muted);font-size:.8rem}
+/* Skill/spell pills: compact ovals by default (hover shows the description as a native tooltip);
+   clicking selects it and the label expands to the full card, with its description inline, same as before. */
+.skillgrid{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:flex-start}
+.skillgrid label.pill{display:inline-flex;align-items:center;gap:5px;flex:none;width:auto;
+  border:1px solid var(--line);border-radius:999px;padding:4px 14px;margin:0;background:var(--panel);cursor:pointer;transition:border-color .1s}
+.skillgrid label.pill:hover{border-color:var(--brass)}
+.skillgrid label.pill input{margin:0}
+.skillgrid label.pill .dsc{display:none}
+.skillgrid label.pill:has(input:checked){flex-basis:100%;width:100%;border-radius:6px;border-color:var(--brass);background:rgba(180,140,60,.08);flex-wrap:wrap;align-items:baseline;padding:6px 12px}
+.skillgrid label.pill:has(input:checked) .dsc{display:block;flex-basis:100%;margin-left:22px;color:var(--muted);font-size:.8rem}
 .hiredpick select{width:100%;font:inherit}
 .hiredpick input{width:100%;margin-bottom:6px}
 .wpn{color:var(--brass);font-size:.78rem;font-family:ui-monospace,monospace}
