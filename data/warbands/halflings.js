@@ -18,6 +18,6 @@ registerWarband("halflings", {
     {"id":"scout","n":"Halfling Scout","race":"halfling","stats":{"M":4,"WS":2,"BS":4,"S":2,"T":2,"W":1,"I":4,"A":1,"Ld":8},"kind":"henchman","c":20,"max":7,"gear":["Short Bow","Bow","Light armour","Buckler","Hunting arrows"]},
     {"id":"warrior","n":"Halfling Warrior","race":"halfling","stats":{"M":4,"WS":3,"BS":3,"S":3,"T":3,"W":1,"I":4,"A":1,"Ld":8},"kind":"henchman","c":25,"max":5,"gear":["Double-handed weapon","Spear","Short Bow","Light armour","Buckler"]},
     {"id":"piggy","n":"Piggy","race":"animal","stats":{"M":5,"WS":4,"BS":0,"S":3,"T":4,"W":1,"I":3,"A":1,"Ld":4},"kind":"henchman","c":20,"max":4,"gear":[],"noXp":true,"note":"Animal: no weapons or experience."},
-    {"id":"ogre","n":"Village Ogre","race":"ogre","stats":{"M":6,"WS":3,"BS":2,"S":4,"T":4,"W":3,"I":3,"A":2,"Ld":7},"kind":"henchman","c":140,"max":1,"large":true,"gear":["Hammer","Axe","Sword","Double-handed weapon","Long bow","Light armour","Helmet"],"note":"Fear, large target, experience at half rate, combat and strength skills only. Ogre Bodyguards will not join or stay once a Village Ogre is bought."}
+    {"id":"ogre","n":"Village Ogre","race":"ogre","stats":{"M":6,"WS":3,"BS":2,"S":4,"T":4,"W":3,"I":3,"A":2,"Ld":7},"kind":"henchman","c":140,"max":1,"large":true,"gear":["Hammer","Axe","Sword","Double-handed weapon","Long bow","Light armour","Helmet"],"note":"Experience at half rate, combat and strength skills only. Ogre Bodyguards will not join or stay once a Village Ogre is bought.","rules":["fear","large-target"]}
   ]
 });

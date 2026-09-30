@@ -19,6 +19,6 @@ registerWarband("beastmen", {
     {"id":"ungor","n":"Ungor","race":"ungor","stats":{"M":5,"WS":3,"BS":3,"S":3,"T":3,"W":1,"I":3,"A":1,"Ld":6},"kind":"henchman","c":25,"gear":["Mace","Hammer","Battle Axe","Spear","Shield"],"note":"Can never become a hero."},
     {"id":"gor","n":"Gor","race":"beastman","stats":{"M":5,"WS":4,"BS":3,"S":3,"T":4,"W":1,"I":3,"A":1,"Ld":6},"kind":"henchman","c":35,"max":5},
     {"id":"chaoshound","n":"Warhound of Chaos","race":"animal","stats":{"M":7,"WS":4,"BS":0,"S":4,"T":3,"W":1,"I":3,"A":1,"Ld":5},"kind":"henchman","c":15,"max":5,"gear":[],"noXp":true,"note":"Animal: no weapons, armour or experience."},
-    {"id":"minotaur","n":"Minotaur","race":"minotaur","stats":{"M":6,"WS":4,"BS":3,"S":4,"T":4,"W":3,"I":4,"A":3,"Ld":8},"kind":"henchman","c":200,"max":1,"large":true,"note":"Fear. Bloodgreed. Large target. May never become a hero."}
+    {"id":"minotaur","n":"Minotaur","race":"minotaur","stats":{"M":6,"WS":4,"BS":3,"S":4,"T":4,"W":3,"I":4,"A":3,"Ld":8},"kind":"henchman","c":200,"max":1,"large":true,"note":"Bloodgreed. May never become a hero.","rules":["fear","large-target"]}
   ]
 });

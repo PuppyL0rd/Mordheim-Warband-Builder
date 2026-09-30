@@ -12,7 +12,7 @@ registerWarband("sonsofhashut", {
   "grade": "1c",
   "units": [
     {"id":"sorcerer","n":"Apprentice Sorcerer","race":"dwarf","stats":{"M":3,"WS":4,"BS":3,"S":3,"T":4,"W":1,"I":3,"A":1,"Ld":9},"kind":"hero","c":85,"max":1,"req":true,"startXp":20,"skills":["combat","academic","hashut-special"],"spells":["chaos-dwarf-magic"],"note":"Leader and wizard; cannot cast in armour. Chaos Dwarfs and Bull Centaurs are hard to kill, ignore armour movement penalties and never free captives."},
-    {"id":"bullcentaur","n":"Bull Centaur","race":"dwarf","stats":{"M":7,"WS":4,"BS":3,"S":4,"T":4,"W":1,"I":3,"A":2,"Ld":9},"kind":"hero","c":75,"max":1,"large":true,"startXp":12,"skills":["combat","strength","hashut-special"],"note":"Large target."},
+    {"id":"bullcentaur","n":"Bull Centaur","race":"dwarf","stats":{"M":7,"WS":4,"BS":3,"S":4,"T":4,"W":1,"I":3,"A":2,"Ld":9},"kind":"hero","c":75,"max":1,"large":true,"startXp":12,"skills":["combat","strength","hashut-special"],"rules":["large-target"]},
     {"id":"champion","n":"Chaos Dwarf Champion","race":"dwarf","stats":{"M":3,"WS":5,"BS":3,"S":3,"T":4,"W":1,"I":2,"A":1,"Ld":9},"kind":"hero","c":50,"max":2,"startXp":8,"skills":["combat","shooting","strength","hashut-special"]},
     {"id":"warrior","n":"Chaos Dwarf Warrior","race":"dwarf","stats":{"M":3,"WS":4,"BS":3,"S":3,"T":4,"W":1,"I":2,"A":1,"Ld":9},"kind":"henchman","c":40,"max":6},
     {"id":"blunderbuss","n":"Blunderbuss Chaos Dwarf","race":"dwarf","stats":{"M":3,"WS":4,"BS":3,"S":3,"T":4,"W":1,"I":2,"A":1,"Ld":9},"kind":"henchman","c":40,"max":3,"gear":["Hammer","Axe","Sword","Chaos Dwarf Blunderbuss","Pistol","Light armour","Heavy armour","Helmet"],"note":"Starts with a Chaos Dwarf Blunderbuss (40 gc); buy it below to cost it."},

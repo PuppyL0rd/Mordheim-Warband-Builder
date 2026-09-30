@@ -17,6 +17,6 @@ registerWarband("ostlander", {
     {"id":"kin","n":"Kin","race":"human","stats":{"M":4,"WS":3,"BS":3,"S":3,"T":3,"W":1,"I":3,"A":1,"Ld":7},"kind":"henchman","c":25},
     {"id":"jaeger","n":"Jaeger","race":"human","stats":{"M":4,"WS":3,"BS":3,"S":3,"T":3,"W":1,"I":3,"A":1,"Ld":7},"kind":"henchman","c":25,"max":7,"gear":["Axe","Sword","Spear","Pistol","Double-barrelled pistol","Bow","Blunderbuss","Handgun","Hunting Rifle","Double-barrelled hunting rifle","Light armour","Shield","Helmet"]},
     {"id":"ruffian","n":"Ruffian","race":"human","stats":{"M":4,"WS":2,"BS":2,"S":3,"T":3,"W":1,"I":2,"A":1,"Ld":10},"kind":"henchman","c":25,"max":5,"gear":["Mace","Hammer","Axe","Sword","Double-handed weapon","Light armour"],"note":"Drunk: passes all Leadership tests. Never a leader; never uses missile weapons."},
-    {"id":"ogre","n":"Ogre","race":"ogre","stats":{"M":6,"WS":3,"BS":2,"S":4,"T":4,"W":3,"I":3,"A":2,"Ld":10},"kind":"henchman","c":160,"max":1,"large":true,"gear":["Club","Axe","Sword","Double-handed weapon","Light armour"],"costs":{"Double-handed weapon":10},"note":"Fear. Large target. Gains advances at half rate."}
+    {"id":"ogre","n":"Ogre","race":"ogre","stats":{"M":6,"WS":3,"BS":2,"S":4,"T":4,"W":3,"I":3,"A":2,"Ld":10},"kind":"henchman","c":160,"max":1,"large":true,"gear":["Club","Axe","Sword","Double-handed weapon","Light armour"],"costs":{"Double-handed weapon":10},"note":"Gains advances at half rate.","rules":["fear","large-target"]}
   ]
 });
