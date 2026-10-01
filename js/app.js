@@ -218,7 +218,16 @@ function campFillHired(){
 }
 async function switchWarband(k){
   if(!WARBANDS[k] || k===S.type) return;
-  if(S.units.length && !(await uiConfirm("Switching warbands clears the current roster. Continue?"))){ render(); return; }
+  if(S.units.length){
+    const choice = await uiChoice("Switching warbands clears the current roster. Save it first?", [
+      {key:"export", label:"Export JSON, then switch", primary:true},
+      {key:"print", label:"Print roster, then switch"},
+      {key:"switch", label:"Switch without saving"}
+    ]);
+    if(!choice){ render(); return; }
+    if(choice==="export"){ $("export").click(); }
+    else if(choice==="print"){ fitSheet(); window.print(); }
+  }
   S = {type:k,name:S.name,gold:WARBANDS[k].gold,units:[]}; OPEN.clear(); WBQ = ""; render();
 }
 function canAdd(d){
