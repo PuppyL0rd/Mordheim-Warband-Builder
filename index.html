@@ -41,6 +41,20 @@ details{margin-top:8px}summary{cursor:pointer;color:var(--brass)}
 .skillgrid label.pill .dsc{display:none}
 .skillgrid label.pill:has(input:checked){flex-basis:100%;width:100%;border-radius:6px;border-color:var(--brass);background:rgba(180,140,60,.08);flex-wrap:wrap;align-items:baseline;padding:6px 12px}
 .skillgrid label.pill:has(input:checked) .dsc{display:block;flex-basis:100%;margin-left:22px;color:var(--muted);font-size:.8rem}
+/* Campaign tab's equipment pills, owned and buyable alike: compact ovals showing just the name (and
+   price, for a buyable one) by default. Hovering any of them shows the item's full special rules as a
+   tooltip. An owned item expands to show those rules written out when you click it (anywhere but its ×,
+   which still sells/drops/undoes it); a buyable one buys it right away when clicked, same budget check
+   as before. */
+.buygrid,.ownedgrid{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:flex-start;margin-top:4px}
+.buygrid button.pill,.ownedgrid .pill{display:inline-flex;align-items:center;flex-wrap:wrap;gap:4px;flex:none;font:inherit;text-align:left;
+  border:1px solid var(--line);border-radius:999px;padding:4px 12px;margin:0;background:var(--panel);cursor:pointer;transition:border-color .1s}
+.buygrid button.pill:hover,.ownedgrid .pill:hover{border-color:var(--brass)}
+.ownedgrid .pill .wrules,.ownedgrid .pill .dsc{display:none}
+.ownedgrid .pill.open{flex-basis:100%;width:100%;border-radius:6px;border-color:var(--brass);background:rgba(180,140,60,.08);padding:6px 12px}
+.ownedgrid .pill.open .wrules{display:block;flex-basis:100%;margin-top:2px}
+.ownedgrid .pill.open .dsc{display:block;flex-basis:100%;color:var(--muted);font-size:.8rem}
+.ownedgrid .pill button[data-act=sell]{border:0;background:none;color:var(--muted);cursor:pointer;font-size:1rem;line-height:1;padding:0 2px}
 
 /* ===== Sidebar: a persistent quick-list of the roster, gold and rating. Fixed alongside the page on
    wide screens; a slide-in panel behind a toggle button on narrow ones (including print, where it's
