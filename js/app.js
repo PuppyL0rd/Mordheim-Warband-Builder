@@ -275,7 +275,7 @@ function render(){
 
   $("roster").innerHTML = S.units.length ? S.units.map((u,i)=>{
     const d = def(u);
-    return `<section class="unit">
+    return `<section class="unit" id="b${i}">
       <header>
         <div class="row">
           <label>${d.n} name <input data-i="${i}" data-f="label" value="${esc(u.label||"")}" placeholder="Optional"></label>
@@ -291,7 +291,36 @@ function render(){
     </section>`;
   }).join("") : `<p class="tag">No units yet. Add a leader to get started.</p>`;
   renderCamp();
+  renderSidebar();
 }
+/* Persistent sidebar: warband name, gold left, rating, and a clickable list of every warrior — jumps to
+   and briefly highlights that warrior's card, in whichever tab (Build or Campaign) is currently open. */
+function renderSidebar(){
+  const el = $("sidebar"); if(!el) return;
+  const w = wb(), prefix = S.mode==="camp" ? "c" : "b";
+  const cash = treasury(), rating = S.units.reduce((t,u)=>t+unitRating(u),0);
+  const groups = [["Heroes","hero"],["Henchmen","henchman"],["Hired swords","hired"]];
+  const list = groups.map(([label,kind])=>{
+    const idx = []; S.units.forEach((u,i)=>{ const d = def(u); if((kind==="hired"?isHired(u):d.kind===kind)) idx.push(i); });
+    if(!idx.length) return "";
+    return `<div class="sb-group">${label}</div>${idx.map(i=>{ const u = S.units[i], d = def(u);
+      return `<button type="button" class="sb-item" data-jump="${prefix}${i}"><span class="nm">${esc(unitName(u))}</span><span class="ty">${esc(d.n)}${u.qty>1?" x"+u.qty:""}</span></button>`; }).join("")}`;
+  }).join("");
+  el.innerHTML = `
+    <div class="sb-head"><div class="sb-name">${esc(S.name||"Unnamed warband")}</div><div class="sb-type">${esc(w.name)}</div></div>
+    <div class="sb-stats"><div class="sb-stat"><b class="${cash<0?"bad":""}">${cash}</b><span>gold left</span></div><div class="sb-stat"><b>${rating}</b><span>rating</span></div></div>
+    <div class="sb-list">${list || `<p class="sb-empty">No warriors yet.</p>`}</div>`;
+}
+function closeSidebar(){ $("sidebar").classList.remove("open"); $("sidebarToggle").setAttribute("aria-expanded","false"); $("sidebarScrim").hidden = true; }
+document.getElementById("sidebarToggle").addEventListener("click", ()=>{
+  const open = $("sidebar").classList.toggle("open"); $("sidebarToggle").setAttribute("aria-expanded", open?"true":"false"); $("sidebarScrim").hidden = !open; });
+document.getElementById("sidebarScrim").addEventListener("click", closeSidebar);
+document.getElementById("sidebar").addEventListener("click", e=>{
+  const b = e.target.closest("[data-jump]"); if(!b) return;
+  const target = document.getElementById(b.dataset.jump); if(!target) return;
+  target.scrollIntoView({behavior:"smooth", block:"start"});
+  target.classList.add("jumped"); setTimeout(()=>target.classList.remove("jumped"), 1400);
+  if(window.matchMedia("(max-width: 1279px)").matches) closeSidebar(); });
 
 /* ===== Print roster: follows the freebooters.org sheets. Page 1 heroes, then henchmen, then hired swords. ===== */
 const SPELL_ITEMS = Object.values(SPELLS).flatMap(g => g.list).filter(x => typeof x !== "string");
@@ -513,17 +542,28 @@ function advOptions(u){
 /* Buying and selling equipment on the Campaign tab. Gear is per model, so a group's purchase is paid for by every model in it. */
 function equipPanel(u,i){
   const d = def(u), ok = allowedGear(d), owned = {}; u.gear.forEach(n=>owned[n]=(owned[n]||0)+1);
-  const chips = Object.entries(owned).map(([n,k])=>{ const p = priceOf(u,n);
-    return `<span class="chip">${esc(n)}${k>1?" x"+k:""}<button type="button" data-act="sell" data-i="${i}" data-n="${esc(n)}" aria-label="Remove ${esc(n)}" title="Sell or drop">×</button></span>`; }).join("");
-  const cats = Object.entries(EQUIPMENT).map(([k,g])=>{
+  /* Owned items: a compact pill per item, same as before Hovering shows its full special rules as a
+     tooltip; clicking it (anywhere but the × control) opens it to show those rules written out, same
+     as a weapon in the Build tab's gear list does. */
+  const ownedPills = Object.entries(owned).map(([n,k])=>{ const e = EQ_ITEMS.find(x=>x.n===n);
+    const ek = "camp:"+i+":eqitem:"+n, open = OPEN.has(ek);
+    return `<div class="pill${open?" open":""}" data-act="toggle" data-tk="${esc(ek)}" title="${e?esc([e.d,e.wd,...(ruleTextFor(e.rules).map(r=>r.n+": "+r.d))].filter(Boolean).join(" ")):""}">
+      <b>${esc(n)}${k>1?" x"+k:""}</b> ${e?wpnLine(e):""} ${e?ruleTag(e.rules):""}${e?fxTag(e):""}
+      <button type="button" class="noprint" data-act="sell" data-i="${i}" data-n="${esc(n)}" aria-label="Remove ${esc(n)}" title="Sell or drop">×</button>
+      ${open?(e&&e.wd?wpnRules(e.wd):(e?descr(e.d):"")):""}</div>`; }).join("");
+  /* Buyable items: a compact pill per item not yet owned (or not yet at its max); hovering shows the full
+     special-rules text so you can check what something does before buying it, and clicking buys it right
+     away, same budget check as before. */
+  const buyPills = Object.entries(EQUIPMENT).map(([k,g])=>{
     const items = ok.filter(e=>e.cat===k && (owned[e.n]||0) < (e.max||1)); if(!items.length) return "";
-    return `<optgroup label="${esc(g.n)}">${items.map(e=>{ const p = priceOf(u,e.n)*u.qty;
-      return `<option value="${esc(e.n)}">${esc(e.n)} - ${priceOf(u,e.n)} gc${u.qty>1?" each ("+p+" gc for the group)":""}</option>`; }).join("")}</optgroup>`; }).join("");
+    return `<div class="sb-group2">${esc(g.n)}</div><div class="buygrid">${items.map(e=>{ const p = priceOf(u,e.n)*u.qty;
+      return `<button type="button" class="pill noprint" data-act="buy" data-i="${i}" data-gn="${esc(e.n)}"
+        title="${esc([e.d,e.wd,...(ruleTextFor(e.rules).map(r=>r.n+": "+r.d))].filter(Boolean).join(" "))}">
+        ${esc(e.n)} <span class="tag">${priceOf(u,e.n)} gc${u.qty>1?" each ("+p+" for the group)":""}</span>${wpnLine(e)} ${ruleTag(e.rules)}${fxTag(e)}</button>`; }).join("")}</div>`; }).join("");
   const key = "camp:"+i+":eq";
   return `<details data-k="${key}" ${OPEN.has(key)?"open":""}><summary>Equipment (${u.gear.length})</summary>
-    ${chips ? `<p>${chips}</p>` : `<p class="tag">No equipment yet.</p>`}
-    ${cats ? `<div class="row noprint"><select id="buy-${i}" aria-label="Item to buy for ${esc(unitName(u))}">${cats}</select><button type="button" data-act="buy" data-i="${i}">Buy</button></div>
-      ${u.qty>1?`<p class="tag">Every model in the group carries it, so the cost is per model times ${u.qty}.</p>`:""}` : ""}
+    ${ownedPills ? `<div class="ownedgrid">${ownedPills}</div>` : `<p class="tag">No equipment yet.</p>`}
+    ${buyPills ? `<div class="noprint">${buyPills}${u.qty>1?`<p class="tag">Every model in the group carries it, so the cost is per model times ${u.qty}.</p>`:""}</div>` : ""}
   </details>`;
 }
 /* Everything currently in effect for one warrior: his own special rules, the rules and effects of what he's carrying, and what his skills and spells do. Used by the Campaign tab's "Special rules in effect" panel. */
@@ -546,7 +586,7 @@ function campCard(u,i){
   const key = "camp:"+i+":inj";
   const injSel = hen ? `<button type="button" data-act="lose" data-i="${i}">A model dies</button> <button type="button" data-act="inj" data-i="${i}" data-v="miss">Miss next game</button>`
     : `<select id="inj-${i}" aria-label="Serious injury for ${esc(unitName(u))}">${INJURIES.map(x=>`<option value="${esc(x.n)}">${esc(x.n)}${x.d?" - "+esc(x.d):""}</option>`).join("")}</select> <button type="button" data-act="inj" data-i="${i}">Apply injury</button>`;
-  return `<section class="unit${pend?" pend":""}">
+  return `<section class="unit${pend?" pend":""}" id="c${i}">
     <header><div><b>${esc(unitName(u))}</b> <span class="tag">${hired?"hired sword":d.kind}${u.qty>1?", "+u.qty+" models":""}${raceName(d)?", "+esc(raceName(d)):""}</span>
       ${u.miss>0?`<span class="badge bad">Misses ${u.miss} game${u.miss>1?"s":""}</span><button type="button" data-act="missdec" data-i="${i}" class="noprint">Back in</button>`:""}</div>
       <div class="tag">rating ${unitRating(u)}</div></header>
@@ -738,6 +778,7 @@ function setMode(m){ S.mode = m==="camp" ? "camp" : "build"; render(); }
 $("tabBuild").onclick = ()=>setMode("build");
 $("tabCamp").onclick = ()=>setMode("camp");
 $("campView").addEventListener("click", async e=>{ const b = e.target.closest("[data-act]"); if(!b) return; const act = b.dataset.act, i = +b.dataset.i;
+  if(act==="toggle"){ const k = b.dataset.tk; if(OPEN.has(k)) OPEN.delete(k); else OPEN.add(k); render(); return; }
   if(act==="print"){ fitSheet(); window.print(); return; }
   if(act==="export"){ $("export").click(); return; }
   if(act==="gold"){ campGold(+b.dataset.s); return; }
@@ -749,7 +790,7 @@ $("campView").addEventListener("click", async e=>{ const b = e.target.closest("[
   if(act==="chiredadd"){ const sel = $("chiredselect"); if(!sel || !sel.value) return; const before = S.units.length;
     await campAct("recruit",0,sel.value);
     if(S.units.length>before){ CHQ = ""; if($("chiredsearch")) $("chiredsearch").value = ""; campFillHired(); } return; }
-  if(act==="buy"){ campAct("buy",i,($("buy-"+i)||{}).value); return; }
+  if(act==="buy"){ campAct("buy",i,b.dataset.gn || ($("buy-"+i)||{}).value); return; }
   if(act==="sell"){ campAct("sell",i,b.dataset.n); return; }
   campAct(act,i); });
 $("campView").addEventListener("change", e=>{ const t = e.target;
