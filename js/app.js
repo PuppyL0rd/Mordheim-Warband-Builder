@@ -559,17 +559,11 @@ function equipPanel(u,i){
     const items = ok.filter(e=>e.cat===k && (owned[e.n]||0) < (e.max||1)); if(!items.length) return "";
     return `<optgroup label="${esc(g.n)}">${items.map(e=>{ const p = priceOf(u,e.n)*u.qty;
       return `<option value="${esc(e.n)}" title="${esc([e.d,e.wd,...(ruleTextFor(e.rules).map(r=>r.n+": "+r.d))].filter(Boolean).join(" "))}">${esc(e.n)} - ${priceOf(u,e.n)} gc${u.qty>1?" each ("+p+" gc for the group)":""}</option>`; }).join("")}</optgroup>`; }).join("");
-  const buyPills = Object.entries(EQUIPMENT).map(([k,g])=>{
-    const items = ok.filter(e=>e.cat===k && (owned[e.n]||0) < (e.max||1)); if(!items.length) return "";
-    return `<div class="sb-group2">${esc(g.n)}</div><div class="buygrid">${items.map(e=>{ const p = priceOf(u,e.n)*u.qty;
-      return `<button type="button" class="pill noprint" data-act="buy" data-i="${i}" data-gn="${esc(e.n)}"
-        title="${esc([e.d,e.wd,...(ruleTextFor(e.rules).map(r=>r.n+": "+r.d))].filter(Boolean).join(" "))}">
-        ${esc(e.n)} <span class="tag">${priceOf(u,e.n)} gc${u.qty>1?" each ("+p+" for the group)":""}</span>${wpnLine(e)} ${ruleTag(e.rules)}${fxTag(e)}</button>`; }).join("")}</div>`; }).join("");
   const key = "camp:"+i+":eq";
   return `<details data-k="${key}" ${OPEN.has(key)?"open":""}><summary>Equipment (${u.gear.length})</summary>
     ${ownedPills ? `<div class="ownedgrid">${ownedPills}</div>` : `<p class="tag">No equipment yet.</p>`}
-    ${cats ? `<div class="row noprint" style="margin-top:8px"><select id="buy-${i}" aria-label="Item to buy for ${esc(unitName(u))}">${cats}</select><button type="button" data-act="buy" data-i="${i}">Buy</button></div>` : ""}
-    ${buyPills ? `<div class="noprint">${buyPills}${u.qty>1?`<p class="tag">Every model in the group carries it, so the cost is per model times ${u.qty}.</p>`:""}</div>` : ""}
+    ${cats ? `<div class="row noprint" style="margin-top:8px"><select id="buy-${i}" aria-label="Item to buy for ${esc(unitName(u))}">${cats}</select><button type="button" data-act="buy" data-i="${i}">Buy</button></div>
+      ${u.qty>1?`<p class="tag">Every model in the group carries it, so the cost is per model times ${u.qty}.</p>`:""}` : ""}
   </details>`;
 }
 /* Everything currently in effect for one warrior: his own special rules, the rules and effects of what he's carrying, and what his skills and spells do. Used by the Campaign tab's "Special rules in effect" panel. */
