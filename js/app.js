@@ -551,9 +551,14 @@ function equipPanel(u,i){
       <b>${esc(n)}${k>1?" x"+k:""}</b> ${e?wpnLine(e):""} ${e?ruleTag(e.rules):""}${e?fxTag(e):""}
       <button type="button" class="noprint" data-act="sell" data-i="${i}" data-n="${esc(n)}" aria-label="Remove ${esc(n)}" title="Sell or drop">×</button>
       ${open?(e&&e.wd?wpnRules(e.wd):(e?descr(e.d):"")):""}</div>`; }).join("");
-  /* Buyable items: a compact pill per item not yet owned (or not yet at its max); hovering shows the full
-     special-rules text so you can check what something does before buying it, and clicking buys it right
-     away, same budget check as before. */
+  /* Buyable items, offered two ways: a dropdown (quick, if you already know what you want) and a pill
+     grid below it. Hovering a pill shows its full special-rules text as a tooltip so you can check what
+     something does before buying it; either the dropdown's Buy button or clicking a pill buys it right
+     away, same budget check either way. */
+  const cats = Object.entries(EQUIPMENT).map(([k,g])=>{
+    const items = ok.filter(e=>e.cat===k && (owned[e.n]||0) < (e.max||1)); if(!items.length) return "";
+    return `<optgroup label="${esc(g.n)}">${items.map(e=>{ const p = priceOf(u,e.n)*u.qty;
+      return `<option value="${esc(e.n)}" title="${esc([e.d,e.wd,...(ruleTextFor(e.rules).map(r=>r.n+": "+r.d))].filter(Boolean).join(" "))}">${esc(e.n)} - ${priceOf(u,e.n)} gc${u.qty>1?" each ("+p+" gc for the group)":""}</option>`; }).join("")}</optgroup>`; }).join("");
   const buyPills = Object.entries(EQUIPMENT).map(([k,g])=>{
     const items = ok.filter(e=>e.cat===k && (owned[e.n]||0) < (e.max||1)); if(!items.length) return "";
     return `<div class="sb-group2">${esc(g.n)}</div><div class="buygrid">${items.map(e=>{ const p = priceOf(u,e.n)*u.qty;
@@ -563,6 +568,7 @@ function equipPanel(u,i){
   const key = "camp:"+i+":eq";
   return `<details data-k="${key}" ${OPEN.has(key)?"open":""}><summary>Equipment (${u.gear.length})</summary>
     ${ownedPills ? `<div class="ownedgrid">${ownedPills}</div>` : `<p class="tag">No equipment yet.</p>`}
+    ${cats ? `<div class="row noprint" style="margin-top:8px"><select id="buy-${i}" aria-label="Item to buy for ${esc(unitName(u))}">${cats}</select><button type="button" data-act="buy" data-i="${i}">Buy</button></div>` : ""}
     ${buyPills ? `<div class="noprint">${buyPills}${u.qty>1?`<p class="tag">Every model in the group carries it, so the cost is per model times ${u.qty}.</p>`:""}</div>` : ""}
   </details>`;
 }
