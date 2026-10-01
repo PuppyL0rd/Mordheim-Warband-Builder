@@ -41,6 +41,44 @@ details{margin-top:8px}summary{cursor:pointer;color:var(--brass)}
 .skillgrid label.pill .dsc{display:none}
 .skillgrid label.pill:has(input:checked){flex-basis:100%;width:100%;border-radius:6px;border-color:var(--brass);background:rgba(180,140,60,.08);flex-wrap:wrap;align-items:baseline;padding:6px 12px}
 .skillgrid label.pill:has(input:checked) .dsc{display:block;flex-basis:100%;margin-left:22px;color:var(--muted);font-size:.8rem}
+
+/* ===== Sidebar: a persistent quick-list of the roster, gold and rating. Fixed alongside the page on
+   wide screens; a slide-in panel behind a toggle button on narrow ones (including print, where it's
+   hidden entirely via .noprint). ===== */
+#sidebar{position:fixed;top:0;left:0;bottom:0;width:230px;background:var(--panel);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;z-index:40;transform:translateX(-100%);transition:transform .18s ease;box-shadow:2px 0 10px rgba(0,0,0,.15)}
+#sidebar.open{transform:translateX(0)}
+#sidebar .sb-head{padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+#sidebar .sb-name{font-weight:700;font-size:1rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#sidebar .sb-type{color:var(--muted);font-size:.8rem;margin-top:2px}
+#sidebar .sb-stats{display:flex;gap:0;border-bottom:1px solid var(--line)}
+#sidebar .sb-stat{flex:1;padding:8px 10px;text-align:center}
+#sidebar .sb-stat+.sb-stat{border-left:1px solid var(--line)}
+#sidebar .sb-stat b{display:block;font-size:1.15rem;line-height:1.1}
+#sidebar .sb-stat b.bad{color:var(--bad)}
+#sidebar .sb-stat span{display:block;font-size:.68rem;color:var(--muted);margin-top:1px}
+#sidebar .sb-list{flex:1;overflow-y:auto;padding:6px 0}
+#sidebar .sb-group{font:700 .68rem/1 sans-serif;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:10px 16px 4px}
+#sidebar button.sb-item{display:block;width:100%;text-align:left;background:none;border:0;border-left:3px solid transparent;
+  padding:6px 16px 6px 13px;font:inherit;font-size:.86rem;color:var(--text);cursor:pointer}
+#sidebar button.sb-item:hover{background:rgba(180,140,60,.1);border-left-color:var(--brass)}
+#sidebar button.sb-item .nm{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#sidebar button.sb-item .ty{display:block;color:var(--muted);font-size:.74rem}
+#sidebar .sb-empty{padding:10px 16px;color:var(--muted);font-size:.85rem}
+#sidebarToggle{position:fixed;top:14px;left:14px;z-index:41;background:var(--brass);color:#1a1a1a;border:0;border-radius:6px;
+  padding:8px 14px;font:700 .85rem/1 sans-serif;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+@media (max-width:1279px){ main{padding-top:64px} }
+#sidebarScrim{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:39}
+#sidebarScrim[hidden]{display:none}
+
+@media (min-width:1280px){
+  #sidebar{transform:none;box-shadow:none}
+  #sidebarToggle,#sidebarScrim{display:none}
+  main{margin-left:230px;margin-right:auto}
+}
+@media print{ #sidebar,#sidebarToggle,#sidebarScrim{display:none !important} }
+@keyframes jumpflash{0%{box-shadow:0 0 0 3px var(--brass)}100%{box-shadow:0 0 0 3px transparent}}
+.unit.jumped{animation:jumpflash 1.4s ease-out}
 .hiredpick select{width:100%;font:inherit}
 .hiredpick input{width:100%;margin-bottom:6px}
 .wpn{color:var(--brass);font-size:.78rem;font-family:ui-monospace,monospace}
@@ -185,6 +223,9 @@ input[type=number]{width:70px}
 </style>
 </head>
 <body>
+<button type="button" id="sidebarToggle" class="noprint" aria-label="Show warband list" aria-expanded="false">Roster ☰</button>
+<aside id="sidebar" class="noprint" aria-label="Warband quick list"></aside>
+<div id="sidebarScrim" class="noprint" hidden></div>
 <main>
 <h1>Mordheim Warband Builder</h1>
 <p class="tag">Check costs and limits against your own rulebook. To add or change warbands, items, skills, spells or hired swords, edit the files in the data folder.</p>
